@@ -1,14 +1,16 @@
-name := "minimal-scala"
+organization in ThisBuild := "cqrs"
 
-version := "1.0"
+scalaVersion in ThisBuild := "2.11.8"
 
-scalaVersion := "2.11.8"
+version in ThisBuild := "1.0"
 
-libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-stream" % "2.4.2",
-  "com.typesafe.akka" %% "akka-cluster-tools" % "2.4.2",
+val akkaVersion = "2.4.3"
 
-  "com.typesafe.akka" %% "akka-persistence" % "2.4.2",
+lazy val libs = Seq(
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
+
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.11",
 
   "org.scala-lang.modules" %% "scala-async" % "0.9.5",
@@ -19,3 +21,16 @@ libraryDependencies ++= Seq(
 
   "org.scalatest" %% "scalatest" % "2.2.5" % "test"
 )
+
+
+lazy val commonMessages = project
+lazy val gatewayMessages = project.dependsOn(commonMessages)
+lazy val customerMessages = project.dependsOn(commonMessages)
+lazy val creditHistoryMessages = project.dependsOn(commonMessages)
+lazy val accountMessages = project.dependsOn(commonMessages)
+
+lazy val commonService = project.settings(libraryDependencies ++= libs).dependsOn(commonMessages)
+lazy val gatewayService = project.dependsOn(gatewayMessages, customerMessages, accountMessages, commonService)
+lazy val customerService = project.dependsOn(customerMessages, creditHistoryMessages, commonService)
+lazy val creditHistoryService = project.dependsOn(creditHistoryMessages, commonService)
+lazy val accountService = project.dependsOn(accountMessages, commonService)
