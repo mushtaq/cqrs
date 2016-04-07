@@ -11,6 +11,7 @@ lazy val libs = Seq(
   "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
 
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-distributed-data-experimental" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-cassandra" % "0.11",
 
   "org.scala-lang.modules" %% "scala-async" % "0.9.5",
@@ -34,3 +35,5 @@ lazy val gatewayService = project.dependsOn(gatewayMessages, customerMessages, a
 lazy val customerService = project.dependsOn(customerMessages, creditHistoryMessages, commonService)
 lazy val creditHistoryService = project.dependsOn(creditHistoryMessages, commonService)
 lazy val accountService = project.dependsOn(accountMessages, commonService)
+
+lazy val client = project.dependsOn(gatewayMessages, commonService)

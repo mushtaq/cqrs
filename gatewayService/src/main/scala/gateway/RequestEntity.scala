@@ -1,68 +1,54 @@
 package gateway
 
-import account.AccountRegion
 import account.AccountRegion.{AccountCreated, CreateAccount}
-import akka.actor.{Actor, PoisonPill, ReceiveTimeout}
-import akka.cluster.sharding.ClusterSharding
+import akka.actor.{Actor, ActorRef, PoisonPill, ReceiveTimeout}
 import akka.cluster.sharding.ShardRegion.Passivate
-import akka.persistence.PersistentActor
-import commons.Messages.Customer
-import customer.CustomerRegion
+import commons.CqrsEntity
+import commons.Messages.{Account, Customer}
 import customer.CustomerRegion.{CreateCustomer, CustomerCreated, CustomerCreationFailed}
 import gateway.GatewayRegion.CreateAccountRequest
 
-import scala.concurrent.duration._
+class RequestEntity(customerRegion: ActorRef, accountRegion: ActorRef) extends CqrsEntity {
 
-class RequestEntity extends PersistentActor {
-
-  val customerRegion = ClusterSharding(context.system).shardRegion(CustomerRegion.Name)
-  val accountRegion = ClusterSharding(context.system).shardRegion(AccountRegion.Name)
-
-  context.setReceiveTimeout(1.minute)
-
-  def persistenceId: String = self.path.parent.name + "-" + self.path.name
+  var pendingCustomers = List.empty[Customer]
+  var account: Account = null
 
   def receiveCommand: Receive = {
-    case msg @ CreateAccountRequest(balance, primaryHolder, jointHolder) =>
-      val pendingCustomers = List(primaryHolder) ++ jointHolder
-      createCustomers(pendingCustomers, msg)
-      context.become(awaitCustomerCreation(pendingCustomers, msg))
+    case msg: CreateAccountRequest =>
+      account = msg.account
+      pendingCustomers = msg.holders
+      createCustomers()
+      context.become(awaitCustomerCreation)
   }
 
-  def awaitCustomerCreation(pendingCustomers: List[Customer], request: CreateAccountRequest): Receive = {
-    case CustomerCreated(requestId, ssn)                =>
-      val pendingCustomers1 = pendingCustomers.filterNot(_.ssn == ssn)
-      if (pendingCustomers1.isEmpty) {
-        createAccount(request)
-        context.become(awaitAccountCreation(request))
-      } else {
-        context.become(awaitCustomerCreation(pendingCustomers1, request))
+  def awaitCustomerCreation: Receive = {
+    case CustomerCreated(customer)                =>
+      pendingCustomers = pendingCustomers.filterNot(_.ssn == customer.ssn)
+      if (pendingCustomers.isEmpty) {
+        createAccount()
+        context.become(awaitAccountCreation)
       }
-    case CustomerCreationFailed(requestId, ssn, reason) =>
-      println(s"customer creation failed for customer=$ssn, request=$request, reason=$reason")
-      passivate()
-    case ReceiveTimeout                                 =>
-      createCustomers(pendingCustomers, request)
+    case CustomerCreationFailed(customer, reason) =>
+      println(s"customer creation failed for customer=$customer, account=$account, reason=$reason")
+      context.parent ! Passivate(PoisonPill)
+    case ReceiveTimeout                           =>
+      createCustomers()
   }
 
-  def awaitAccountCreation(request: CreateAccountRequest): Receive = {
-    case AccountCreated(requestId) =>
-      println(s"account created for request:$request")
-      passivate()
-    case ReceiveTimeout            =>
-      createAccount(request)
+  def awaitAccountCreation: Receive = {
+    case AccountCreated(_) =>
+      println(s"account created for account:$account")
+      context.parent ! Passivate(PoisonPill)
+    case ReceiveTimeout    =>
+      createAccount()
   }
 
-  def createAccount(request: CreateAccountRequest): Unit = {
-    accountRegion ! CreateAccount(request.requestId, request.balance, request.primaryHolder.ssn, request.jointHolder.map(_.ssn))
+  def createAccount(): Unit = {
+    accountRegion ! CreateAccount(account.accountId, account)
   }
 
-  def createCustomers(pendingCustomers: List[Customer], request: CreateAccountRequest): Unit = {
-    pendingCustomers.foreach(c => customerRegion ! CreateCustomer(c.ssn, request.requestId, c))
-  }
-
-  def passivate() = {
-    context.parent ! Passivate(PoisonPill)
+  def createCustomers(): Unit = {
+    pendingCustomers.foreach(customer => customerRegion ! CreateCustomer(customer.ssn, customer))
   }
 
   def receiveRecover: Receive = Actor.emptyBehavior

@@ -13,10 +13,8 @@ object CustomerRegion {
     def id: String = ssn
   }
 
-  case class CreateCustomer(ssn: String, requestId: String, customer: Customer) extends Command
+  case class CreateCustomer(ssn: String, customer: Customer) extends Command
 
-  case class CustomerCreated(requestId: String, ssn: String) extends Command
-
-  case class CustomerCreationFailed(requestId: String, ssn: String, reason: String) extends Command
-
+  case class CustomerCreated(customer: Customer)
+  case class CustomerCreationFailed(customer: Customer, reason: String)
 }
