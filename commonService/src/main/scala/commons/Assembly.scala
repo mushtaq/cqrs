@@ -4,23 +4,23 @@ import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
 
-class Assembly(params: Params, role: String) {
+class Assembly(params: Params, serviceName: String) {
 
-  val configLoader = new ConfigLoader(params, role)
+  val configLoader = new ConfigLoader(params, serviceName)
   val system = ActorSystem(configLoader.ClusterName, configLoader.load())
   val runtime = new ActorRuntime(system)
 
   def startShard(props: Props) = ClusterSharding(system).start(
-    typeName = role,
+    typeName = serviceName,
     entityProps = props,
-    settings = ClusterShardingSettings(system).withRole(role),
+    settings = ClusterShardingSettings(system).withRole(serviceName),
     extractEntityId = Cqrs.identExtractor,
     extractShardId = Cqrs.shardResolver
   )
 
-  def startProxy(name: String) = ClusterSharding(system).startProxy(
-    typeName = name,
-    role = Some(name),
+  def startProxy(shardName: String) = ClusterSharding(system).startProxy(
+    typeName = shardName,
+    role = Some(shardName),
     extractEntityId = Cqrs.identExtractor,
     extractShardId = Cqrs.shardResolver
   )
@@ -29,17 +29,17 @@ class Assembly(params: Params, role: String) {
     props = ClusterSingletonManager.props(
       singletonProps = props,
       terminationMessage = PoisonPill,
-      settings = ClusterSingletonManagerSettings(system).withRole(role)
+      settings = ClusterSingletonManagerSettings(system).withRole(serviceName)
     ),
-    name = role
+    name = serviceName
   )
 
-  def getSingleton(name: String) = system.actorOf(
+  def getSingleton(singletonName: String) = system.actorOf(
     props = ClusterSingletonProxy.props(
-      s"/user/$name",
-      ClusterSingletonProxySettings(system).withRole(name)
+      s"/user/$singletonName",
+      ClusterSingletonProxySettings(system).withRole(singletonName)
     ),
-    name = s"$name-Proxy"
+    name = s"$singletonName-Proxy"
   )
 
 }

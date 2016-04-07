@@ -7,7 +7,7 @@ import commons.ConfigObjectExtensions.RichConfig
 
 import scala.util.{Failure, Success, Try}
 
-class ConfigLoader(params: Params, role: String) {
+class ConfigLoader(params: Params, serviceName: String) {
 
   def load() = config.withFallback(extraConfig).resolve()
 
@@ -21,7 +21,7 @@ class ConfigLoader(params: Params, role: String) {
 
   def extraConfig = ConfigFactory.empty()
     .withPair("hostname", privateIp)
-    .withPair("role", role)
+    .withPair("service-name", serviceName)
 
   def privateIp = params.env match {
     case "prod" => InetAddress.getLocalHost.getHostAddress
