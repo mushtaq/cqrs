@@ -5,16 +5,12 @@ import commons.Messages.Command
 
 object Cqrs {
 
-  val numberOfNodes = 3
+  val maxNumberOfNodes = 3
 
-  val identExtractor: ShardRegion.ExtractEntityId = {
-    case cmd: Command => (cmd.id, cmd)
-  }
-
-  val shardResolver: ShardRegion.ExtractShardId = {
-    case cmd: Command =>
-      val numberOfShards = numberOfNodes * 10
-      (cmd.id.hashCode.abs % numberOfShards).toString
+  val messageExtractor = new ShardRegion.HashCodeMessageExtractor(maxNumberOfNodes * 10) {
+    def entityId(message: Any): String = message match {
+      case x: Command => x.id
+    }
   }
 
 }

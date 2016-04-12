@@ -1,5 +1,7 @@
 package commons
 
+import java.util.Optional
+
 import akka.actor.{ActorSystem, PoisonPill, Props}
 import akka.cluster.sharding.{ClusterSharding, ClusterShardingSettings}
 import akka.cluster.singleton.{ClusterSingletonManager, ClusterSingletonManagerSettings, ClusterSingletonProxy, ClusterSingletonProxySettings}
@@ -14,15 +16,13 @@ class Assembly(params: Params, serviceName: String) {
     typeName = serviceName,
     entityProps = props,
     settings = ClusterShardingSettings(system).withRole(serviceName),
-    extractEntityId = Cqrs.identExtractor,
-    extractShardId = Cqrs.shardResolver
+    messageExtractor = Cqrs.messageExtractor
   )
 
   def startProxy(shardName: String) = ClusterSharding(system).startProxy(
     typeName = shardName,
-    role = Some(shardName),
-    extractEntityId = Cqrs.identExtractor,
-    extractShardId = Cqrs.shardResolver
+    role = Optional.of(shardName),
+    messageExtractor = Cqrs.messageExtractor
   )
 
   def startSingleton(props: Props) = system.actorOf(
