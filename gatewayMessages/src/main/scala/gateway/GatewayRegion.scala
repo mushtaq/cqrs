@@ -14,8 +14,8 @@ object GatewayRegion {
   }
 
   case class CreateAccountRequest(balance: Double, holder: Customer, jointHolder: Option[Customer]) extends Command {
-    def accountId: String = holder.ssn + "-" + System.nanoTime()
-    def account = Account(accountId, balance, holder.ssn, jointHolder.map(_.ssn))
-    def holders = List(holder) ++ jointHolder
+    val accountId: String = holder.ssn + "-" + System.nanoTime()
+    val account = Account(accountId, balance, holder.ssn, jointHolder.map(_.ssn))
+    val holders = List(holder) ++ jointHolder
   }
 }

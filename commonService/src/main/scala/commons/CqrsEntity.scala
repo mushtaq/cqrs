@@ -9,10 +9,17 @@ import scala.concurrent.duration._
 abstract class CqrsEntity extends PersistentActor {
   def persistenceId: String = self.path.parent.name + "-" + self.path.name
 
-  context.setReceiveTimeout(1.minute)
+  override def preStart(): Unit = {
+    context.setReceiveTimeout(15.seconds)
+    println(s">>>>> creating $self")
+  }
 
   override def unhandled(message: Any): Unit = message match {
-    case ReceiveTimeout => context.parent ! Passivate(PoisonPill)
-    case _              => super.unhandled(message)
+    case ReceiveTimeout =>
+      println(s"*** passivating due to unhandled timeout: $self")
+      context.parent ! Passivate(PoisonPill)
+    case _              =>
+      println(s"^^^^ unhandled message: $message")
+      super.unhandled(message)
   }
 }

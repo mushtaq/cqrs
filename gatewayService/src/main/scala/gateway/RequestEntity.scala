@@ -13,12 +13,21 @@ class RequestEntity(customerRegion: ActorRef, accountRegion: ActorRef) extends C
   var pendingCustomers = List.empty[Customer]
   var account: Account = null
 
+  def receiveRecover: Receive = {
+    case command: CreateAccountRequest => processCommand(command)
+  }
+
   def receiveCommand: Receive = {
-    case msg: CreateAccountRequest =>
-      account = msg.account
-      pendingCustomers = msg.holders
-      createCustomers()
-      context.become(awaitCustomerCreation)
+    case command: CreateAccountRequest => persistAsync(command) { evt =>
+      processCommand(evt)
+    }
+  }
+
+  def processCommand(command: CreateAccountRequest): Unit = {
+    account = command.account
+    pendingCustomers = command.holders
+    createCustomers()
+    context.become(awaitCustomerCreation)
   }
 
   def awaitCustomerCreation: Receive = {
@@ -51,5 +60,4 @@ class RequestEntity(customerRegion: ActorRef, accountRegion: ActorRef) extends C
     pendingCustomers.foreach(customer => customerRegion ! CreateCustomer(customer.ssn, customer))
   }
 
-  def receiveRecover: Receive = Actor.emptyBehavior
 }
