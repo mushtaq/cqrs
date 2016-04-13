@@ -7,7 +7,7 @@ import caseapp._
 import commons.Messages.{Account, Address, Customer, Get}
 import commons.{Assembly, Params}
 import customer.CustomerRegion
-import customer.CustomerRegion.CreateCustomer
+import customer.CustomerRegion.{CreateCustomer, UpdateAddress}
 import gateway.GatewayRegion
 import gateway.GatewayRegion.CreateAccountRequest
 
@@ -59,6 +59,8 @@ object Client {
   def getCustomer(id: Int) = customerRegion ? Get(id.toString)
   def getAccount(id: Int) = accountRegion ? Get(id.toString)
   def getRequest(id: Int) = gatewayRegion ? Get(id.toString)
+
+  def updateAddress(id: Int, newPin: Int) = customerRegion ? UpdateAddress(id.toString, Address("new", "new", newPin))
 
   def customer(id: Int) = Customer(id.toString, "mushtaq", "ahmed", Address("baner", "pune", 21))
   def account(id: Int) = Account(id.toString, 100, "abc", Some("def"))
