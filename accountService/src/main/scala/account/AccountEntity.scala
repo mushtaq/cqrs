@@ -7,15 +7,18 @@ import commons.Messages.Account
 
 class AccountEntity extends CqrsEntity {
 
+  var state: Account = null
+
   def receiveCommand: Receive = {
     case CreateAccount(accountId, account) =>
+      state = account
       sender() ! AccountCreated(account)
-      context.become(accountCreated(account))
+      context.become(accountCreated)
   }
 
-  def accountCreated(account: Account): Receive = {
+  def accountCreated: Receive = {
     case CreateAccount(accountId, _) =>
-      sender() ! AccountCreated(account)
+      sender() ! AccountCreated(state)
   }
 
   def receiveRecover: Receive = Actor.emptyBehavior
