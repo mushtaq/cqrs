@@ -36,4 +36,4 @@ lazy val customerService = project.dependsOn(customerMessages, creditHistoryMess
 lazy val creditHistoryService = project.dependsOn(creditHistoryMessages, commonService)
 lazy val accountService = project.dependsOn(accountMessages, commonService)
 
-lazy val client = project.dependsOn(gatewayMessages, commonService)
+lazy val client = project.dependsOn(gatewayMessages, customerMessages, accountMessages, commonService)

@@ -21,7 +21,8 @@ abstract class CqrsEntity extends PersistentActor {
     case ReceiveTimeout =>
       println(s"*** passivating due to unhandled timeout: $self")
       context.parent ! Passivate(PoisonPill)
-    case Get(_)         => State(Option(state))
+    case Get(_)         =>
+      sender() ! State(Option(state))
     case _              =>
       println(s"^^^^ unhandled message: $message")
       super.unhandled(message)
