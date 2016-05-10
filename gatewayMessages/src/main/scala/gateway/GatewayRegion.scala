@@ -5,7 +5,7 @@ import commons.Messages.{Account, Customer}
 
 object GatewayRegion {
 
-  val Name = "Gateway"
+  val Name = "Request"
 
   sealed trait Command extends Messages.Command {
     def accountId: String

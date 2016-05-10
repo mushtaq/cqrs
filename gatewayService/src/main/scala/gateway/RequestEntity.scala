@@ -10,6 +10,8 @@ import gateway.GatewayRegion.CreateAccountRequest
 
 class RequestEntity(customerRegion: ActorRef, accountRegion: ActorRef) extends CqrsEntity {
 
+  def prefix: String = GatewayRegion.Name
+
   var pendingCustomers = List.empty[Customer]
   var state: Account = null
 

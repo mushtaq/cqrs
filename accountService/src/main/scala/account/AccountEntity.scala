@@ -7,6 +7,8 @@ import commons.Messages.Account
 
 class AccountEntity extends CqrsEntity {
 
+  def prefix: String = AccountRegion.Name
+
   var state: Account = null
 
   def receiveCommand: Receive = {

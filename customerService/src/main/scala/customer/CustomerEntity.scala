@@ -13,6 +13,8 @@ import scala.concurrent.duration.DurationInt
 
 class CustomerEntity(creditHistoryProxy: ActorRef) extends CqrsEntity {
 
+  def prefix: String = CustomerRegion.Name
+
   implicit val timeout: Timeout = Timeout(10.seconds)
   import context.dispatcher
 

@@ -10,10 +10,12 @@ import scala.concurrent.duration._
 abstract class CqrsEntity extends PersistentActor {
   def state: Any
 
-  def persistenceId: String = self.path.parent.name + "-" + self.path.name
+  def prefix: String
+
+  def persistenceId: String = prefix + "-" + self.path.name
 
   override def preStart(): Unit = {
-    context.setReceiveTimeout(15.seconds)
+    context.setReceiveTimeout(1.minute)
     println(s">>>>> creating $self")
   }
 
